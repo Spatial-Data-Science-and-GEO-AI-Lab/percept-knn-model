@@ -51,6 +51,7 @@ parser.add_argument('--demographics', '-d', metavar='FILENAME', type=str, help='
 parser.add_argument('-k', metavar='K', help='Value of K (number of nearest neighbours to include in cluster) or comma-separated list of k-values to try.', default=10)
 parser.add_argument('--training-split', metavar='FLOAT', help='Portion of data to use for \'training\', value between 0 and 1 (default: 0.8)', default=0.8, type=float)
 parser.add_argument('--randomize', action='store_true', help='Randomly shuffle the data before splitting into training and testing sets.', default=False)
+parser.add_argument('--stratified', action='store_true', help='Use stratified sampling (stratified by rating).', default=False)
 parser.add_argument('--environmental', action='store_true', help='Add environmental features into the model', default=False)
 parser.add_argument('--environmental-method', metavar='METHOD', type=str, help='One of: append, average', default='append')
 parser.add_argument('--prompt-style', metavar='NUM', type=int, help='One of: 0, 1', default=0)
@@ -403,17 +404,43 @@ for cat in categories:
     d['imgids'] = np.array(d['imgids'], dtype=int)
     d['vecs'] = np.array(d['vecs'], dtype=allvecs.dtype)
 
-    # Split into train/test sets & randomize order if requested
-    count = d['vecs'].shape[0]
-    traincount = int(float(count) * args.training_split)
-    testcount = count - traincount
-    log(f'Split for {cat}: |training set| = {traincount}; |testing set| = {testcount}')
 
-    inds = np.array(range(count))
-    if args.randomize:
-        shuffle(inds)
-    traininds = inds[:traincount]
-    testinds  = inds[traincount:]
+    if args.stratified:
+        # Split into stratified train/test sets & randomize order if requested.
+        # Stratify by score (1 to 5) so that the training and testing sets have
+        # similar proportions of each score.
+        #
+        # Split the indices of the d['scores'] array into 5 bins
+        bins = [np.where(d['scores'].astype(int) == i)[0] for i in range(1, 6)]
+        # Find the number of training samples in each bin
+        traincounts = [int(float(bins[i].size) * args.training_split) for i in range(5)]
+        testcounts  = [bins[i].size - traincounts[i] for i in range(5)]
+        if args.randomize:
+            # Shuffle each bin separately if randomization is requested
+            for i in range(5): shuffle(bins[i])
+        # Training and testing split for each bin
+        trainbininds = [bins[i][:c] for (i, c) in enumerate(traincounts)]
+        testbininds  = [bins[i][c:] for (i, c) in enumerate(traincounts)]
+        traininds = np.concatenate(trainbininds)
+        testinds  = np.concatenate(testbininds)
+        if args.extra_assertions:
+            # Array sizes should all add up to the original bins
+            assert (np.all([bins[i].shape[0] == trainbininds[i].shape[0] + testbininds[i].shape[0] for i in range(5)]))
+            # Training set and testing set must not overlap
+            assert (np.intersect1d(traininds, testinds).size == 0)
+        log(f'Stratified splits for {cat}: |training sets| = {list(traincounts)}; |testing sets| = {list(testcounts)}')
+    else:
+        # Split into train/test sets & randomize order if requested.
+        count = d['vecs'].shape[0]
+        traincount = int(float(count) * args.training_split)
+        testcount = count - traincount
+        log(f'Split for {cat}: |training set| = {traincount}; |testing set| = {testcount}')
+        inds = np.arange(count)
+        if args.randomize:
+            shuffle(inds)
+        traininds = inds[:traincount]
+        testinds  = inds[traincount:]
+
     d['trainscores'] = d['scores'][traininds]
     d['testscores'] = d['scores'][testinds]
     d['trainimgids'] = d['imgids'][traininds]
@@ -506,7 +533,12 @@ for cat in categories:
             with open(args.results_log, 'a') as fp:
                 csvw = csv.writer(fp)
                 rand = 'randomized=' + ('True' if args.randomize else 'False')
-                csvw.writerow([cat, clipmodelname, k, rand, traincount, testcount, mse, r2, args.normalization_method])
+                strat = 'stratified=' + ('True' if args.stratified else 'False')
+                env = 'env=None' if not args.environmental else f'env={args.environmental_method}+p{args.prompt_style}'
+                if args.stratified:
+                    traincount = '+'.join(map(str,traincounts))
+                    testcount  = '+'.join(map(str,testcounts))
+                csvw.writerow([cat, clipmodelname, k, rand, strat, traincount, testcount, mse, r2, args.normalization_method, env])
 
     # Handle the case where k is a comma-separated list of k values
     if type(args.k) == str:
