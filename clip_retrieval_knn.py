@@ -432,6 +432,9 @@ for cat in categories:
             # Training set and testing set must not overlap
             assert (np.intersect1d(traininds, testinds).size == 0)
         log(f'Stratified splits for {cat}: |training sets| = {list(traincounts)}; |testing sets| = {list(testcounts)}')
+        # for later use in logging
+        traincount = '+'.join(map(str,traincounts))
+        testcount  = '+'.join(map(str,testcounts))
     else:
         # Split into train/test sets & randomize order if requested.
         count = d['vecs'].shape[0]
@@ -538,9 +541,6 @@ for cat in categories:
                 rand = 'random=' + ((str(args.random_seed) if args.random_seed else 'True') if args.randomize else 'False')
                 strat = 'stratified=' + ('True' if args.stratified else 'False')
                 env = 'env=None' if not args.environmental else f'env={args.environmental_method}+p{args.prompt_style}'
-                if args.stratified:
-                    traincount = '+'.join(map(str,traincounts))
-                    testcount  = '+'.join(map(str,testcounts))
                 csvw.writerow([cat, clipmodelname, k, rand, strat, traincount, testcount, mse, r2, args.normalization_method, env])
 
     # Handle the case where k is a comma-separated list of k values
