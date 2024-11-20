@@ -39,7 +39,7 @@ from PIL import Image
 import pyarrow.parquet as pq
 import geopandas as gpd
 import pandas as pd
-from random import shuffle
+from random import shuffle, seed
 
 parser = argparse.ArgumentParser(prog='clip_retrieval_knn', description='K-nearest neighbour on CLIP encoded vectors')
 parser.add_argument('--images-dir', '-i', metavar='DIRECTORY', type=str, help='Directory with images to be processed with clip-retrieval tool', default=None)
@@ -51,6 +51,7 @@ parser.add_argument('--demographics', '-d', metavar='FILENAME', type=str, help='
 parser.add_argument('-k', metavar='K', help='Value of K (number of nearest neighbours to include in cluster) or comma-separated list of k-values to try.', default=10)
 parser.add_argument('--training-split', metavar='FLOAT', help='Portion of data to use for \'training\', value between 0 and 1 (default: 0.8)', default=0.8, type=float)
 parser.add_argument('--randomize', action='store_true', help='Randomly shuffle the data before splitting into training and testing sets.', default=False)
+parser.add_argument('--random-seed', metavar='INT', help='Seed for random number generator.', default=None, type=int)
 parser.add_argument('--stratified', action='store_true', help='Use stratified sampling (stratified by rating).', default=False)
 parser.add_argument('--environmental', action='store_true', help='Add environmental features into the model', default=False)
 parser.add_argument('--environmental-method', metavar='METHOD', type=str, help='One of: append, average', default='append')
@@ -70,6 +71,8 @@ args = parser.parse_args()
 def log(s, level=1, flush=False):
     if args.quiet and level > 0: return
     print(s, flush=flush)
+
+if args.random_seed: seed(args.random_seed)
 
 # The various categories of ratings in our survey
 categories = ['walkability', 'bikeability', 'pleasantness', 'greenness', 'safety']
@@ -532,7 +535,7 @@ for cat in categories:
         if args.results_log is not None:
             with open(args.results_log, 'a') as fp:
                 csvw = csv.writer(fp)
-                rand = 'randomized=' + ('True' if args.randomize else 'False')
+                rand = 'random=' + ((str(args.random_seed) if args.random_seed else 'True') if args.randomize else 'False')
                 strat = 'stratified=' + ('True' if args.stratified else 'False')
                 env = 'env=None' if not args.environmental else f'env={args.environmental_method}+p{args.prompt_style}'
                 if args.stratified:
