@@ -126,6 +126,8 @@ log(f'Read metadata for {num_images} images.')
 
 # Load image CLIP vector data
 allvecs = np.load(npyfile)
+allvecs = np.asarray(allvecs, np.float64)
+allvecs = allvecs / np.expand_dims(np.linalg.norm(allvecs, axis=1), axis=1)
 
 # fields in the demographic data that should be coerced to type int.
 int_fields = ['image_id', 'category_id', 'rating_id', 'session_id', 'rating', 'score', 'age']
@@ -318,6 +320,8 @@ if args.environmental:
     alltextvecs = np.load(textnpyfile)
     texttable = pq.read_table(textmetadatafile)[0]
     num_texts = texttable.length()
+    alltextvecs = np.asarray(alltextvecs, np.float64)
+    alltextvecs = alltextvecs / np.expand_dims(np.linalg.norm(alltextvecs, axis=1), axis=1)
     log(f'Read metadata for {num_texts} texts.')
 
     # Assumption: alltextvecs are in the same order as allvecs, because the
