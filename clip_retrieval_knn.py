@@ -28,6 +28,7 @@ import regex
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.utils.extmath import softmax
+from scipy.spatial import geometric_slerp
 import json
 import csv
 import sys
@@ -54,7 +55,7 @@ parser.add_argument('--randomize', action='store_true', help='Randomly shuffle t
 parser.add_argument('--random-seed', metavar='INT', help='Seed for random number generator.', default=None, type=int)
 parser.add_argument('--stratified', action='store_true', help='Use stratified sampling (stratified by rating).', default=False)
 parser.add_argument('--environmental', action='store_true', help='Add environmental features into the model', default=False)
-parser.add_argument('--environmental-method', metavar='METHOD', type=str, help='One of: append, average', default='append')
+parser.add_argument('--environmental-method', metavar='METHOD', type=str, help='One of: append, average, slerp', default='append')
 parser.add_argument('--prompt-style', metavar='NUM', type=int, help='One of: 0, 1', default=0)
 parser.add_argument('--results-log', '-L', metavar='FILENAME', type=str, help='Append the results to this file (CSV format)', default=None)
 parser.add_argument('--normalization-method', metavar='METHOD', type=str, help='softmax10** (default), softmax or divbysum', default='softmax10**')
@@ -353,6 +354,16 @@ if args.environmental:
             log(f'Shape mismatch: alltextvecs.shape ({alltextvecs.shape}) != allvecs.shape ({allvecs.shape})', level=0)
             sys.exit(1)
         allvecs = np.average([allvecs, alltextvecs], axis=0)
+    elif args.environmental_method == 'slerp':
+        # For each (img vector, textvector) pair, output [slerp(img vector, text vector, 0.5)...]
+        if alltextvecs.shape != allvecs.shape:
+            log(f'Shape mismatch: alltextvecs.shape ({alltextvecs.shape}) != allvecs.shape ({allvecs.shape})', level=0)
+            sys.exit(1)
+        # slerp works on float64s and gets picky if the vectors are not very close to unit-length
+        slerp_interval = 0.5
+        # slerp is not vectorized
+        for i in range(allvecs.shape[0]):
+            allvecs[i] = geometric_slerp(allvecs[i], alltextvecs[i], slerp_interval)
     else:
         log(f'Invalid --environmental-method: {args.environmental_method}', level=0)
         sys.exit(1)
