@@ -67,6 +67,7 @@ parser.add_argument('--gender', metavar='GENDER,...', help='Comma-separated list
 parser.add_argument('--region', metavar='REGION', help='Include in analysis only those ratings from people who claim to be from this stated region (NL, non-NL)', default=None)
 parser.add_argument('--age', metavar='AGE_MIN,AGE_MAX', help='Include in analysis only those ratings from people who claim to be from this stated age range', default=None)
 parser.add_argument('--education', metavar='LEVEL,...', help='Comma-separated list of surveyed people\'s education level to include in analysis (Primary, Secondary, Tertiary, University, ostgraduate)', default=None)
+parser.add_argument('--export', metavar='FILENAME', help='Instead of running KNN, export numpy arrays with CLIP vectors and scores to the given file.', default=None)
 args = parser.parse_args()
 
 def log(s, level=1, flush=False):
@@ -413,6 +414,23 @@ for i, pathname in enumerate(table):
                 db[cat]['scores'].append(props[lbl])
                 db[cat]['imgids'].append(props['image_id'])
                 db[cat]['vecs'].append(allvecs[i])
+
+
+# Export-mode: dump the vectors and scores into an NPZ file
+if args.export is not None:
+    # Run KNN analysis category by category
+    out = {}
+    for cat in categories:
+        d = db[cat]
+        log(f"Found {len(d['imgids'])} ratings in category {cat}.")
+        out[f'{cat}_scores'] = np.array(d['scores'], dtype=float)
+        out[f'{cat}_vecs'] = np.array(d['vecs'], dtype=allvecs.dtype)
+
+    log(f'Saving to file {args.export}.')
+    np.savez_compressed(args.export, **out)
+    log('Export complete.')
+
+    sys.exit(0)
 
 # Run KNN analysis category by category
 for cat in categories:
