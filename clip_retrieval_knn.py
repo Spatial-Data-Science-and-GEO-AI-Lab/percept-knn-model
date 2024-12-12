@@ -106,7 +106,7 @@ if args.environmental:
 
 if args.images_dir is not None and not Path(embdir).exists():
     # If embeddings don't yet exist then run the clip-retrieval tool to efficiently generate them
-    cmd=["clip-retrieval", 'inference', '--input_dataset', args.images_dir, '--output_folder',  embdir, '--clip_model', args.clip_model] # + args.other_clip_retrieval_args.split(' ')
+    cmd=["clip-retrieval", 'inference', '--input_dataset', args.images_dir, '--output_folder',  embdir, '--clip_model', args.clip_model] + args.other_clip_retrieval_args.split(' ')
     log(f'Running: {" ".join(cmd)}')
     subprocess.run(cmd, check=True)
 
@@ -315,7 +315,7 @@ if args.environmental:
                     fp.write(text + '\n')
 
         # Invoke the clip-retrieval tool to generate text embeddings
-        cmd=["clip-retrieval", 'inference', '--input_dataset', str(textdir), '--output_folder', str(textembdir), '--clip_model', args.clip_model] # + args.other_clip_retrieval_args.split(' ')
+        cmd=["clip-retrieval", 'inference', '--input_dataset', str(textdir), '--output_folder', str(textembdir), '--clip_model', args.clip_model] + args.other_clip_retrieval_args.split(' ')
         log(f'Running: {" ".join(cmd)}')
         subprocess.run(cmd, check=True)
         # These embeddings will be found in the path contained in 'textnpyfile' if successful
