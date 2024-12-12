@@ -145,6 +145,31 @@ greenspace within a circle of radius 300 metres centring on location X'.
 
 ### The variables
 
+### Examples
+
+    python3 complementary_environmental_variables.py --geojson <url> --subgraphs walk --subgraph-stats
+
+    python3 complementary_environmental_variables.py --geojson-url-in-file my_url.txt --subgraphs walk --subgraph-stats
+
+For the remaining examples assume that the URL of the GeoJSON data is written
+on the first and only line of a file named `url.txt` in the current directory;
+this is the default file that the script looks for if no other URL is supplied
+on the command line.
+
+    python3 complementary_environmental_variables.py --subgraphs bike --subgraph-stats --specific-subgraph 22
+
+    python3 complementary_environmental_variables.py --map --basedir my_basedir
+
+    python3 complementary_environmental_variables.py --subgraphs bike --subgraph-stats --all-maps  --max-workers 1 --buffer-size 100
+
+    python3 complementary_environmental_variables.py --features --buffer-size 300 && python3 complementary_environmental_variables.py --features --buffer-size 100
+
+Once finished with downloading and saving variables into the basedir:
+
+    python3 combine_features.py --output my_geojson_with_env_vars.geojson
+
+    python3 combine_features.py --geojson <url> --basedir my_basedir --buffer-sizes 100,300 --output my_geojson_with_env_vars.geojson
+
 ### under construction
 
 We can apply the complementary environmental variables that were generated for

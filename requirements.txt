@@ -7,3 +7,9 @@ tqdm
 geopandas
 pandas
 pyarrow
+matplotlib
+contextily
+networkx
+osmnx
+psutil
+pyproj
