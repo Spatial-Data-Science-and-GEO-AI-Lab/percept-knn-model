@@ -1,0 +1,9 @@
+clip-retrieval
+scikit-learn
+numpy
+transformers
+pillow
+tqdm
+geopandas
+pandas
+pyarrow
