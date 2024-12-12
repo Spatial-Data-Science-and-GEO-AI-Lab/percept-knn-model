@@ -130,6 +130,20 @@ model.npz, do not run the tests.
 
 ## Complementary environmental variables
 
+## Introduction
+
+What do we mean by 'complementary environmental variables'?
+
+These are environmental data (e.g. 'average street length') that are
+complementary to the imagery we already have. Each image is associated with a
+geographic location, and using that geographic location we can download from
+OpenStreetMap information about the street network and other surrounding points
+of interest or features. For example, for a given image location X, if we
+consider a buffer size of 300 metres, that means we take data such as 'the
+number of shops within 300 metres of location X' or 'the proportion of
+greenspace within a circle of radius 300 metres centring on location X'.
+
+### The variables
 
 ### under construction
 
