@@ -79,11 +79,14 @@ We use the same naming convention for CLIP models as clip-retrieval, i.e. from t
 
 ## Examples
 
-	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ -k 20 --clip-model open_clip:ViT-B-32
+	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ \
+        -k 20 --clip-model open_clip:ViT-B-32
 
 Load image filename and score data from `data.geojson`, load the image files themselves from the directory `images/`, use K = 20 and the ViT-B-32 model from Open CLIP.
 
-	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ -k 40 --clip-model open_clip:ViT-H-14-378-quickgelu --environmental --environmental-method slerp --prompt-style 1
+	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ \
+        -k 40 --clip-model open_clip:ViT-H-14-378-quickgelu \
+        --environmental --environmental-method slerp --prompt-style 1
 
 Load image filename and score data from `data.geojson`, load the image files
 themselves from the directory `images/`, use K = 40 and the
@@ -93,16 +96,22 @@ environment variables for each image location that should also be found in
 into vectors and then combine it with the image vectors using Spherical Linear
 Interpolation (slerp).
 
-	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ -k 10,20,30,40,50 --clip-model open_clip:ViT-H-14-378-quickgelu --training-split 0.7 --randomize --random-seed 1000
+	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ \
+        -k 10,20,30,40,50 --clip-model open_clip:ViT-H-14-378-quickgelu \
+        --training-split 0.7 --randomize --random-seed 1000 \
+        --results-log results.csv
 
 Load image filename and score data from `data.geojson`, load the image files
 themselves from the directory `images/`, run the tests multiple times with
 different K values from 10 to 50 and use the ViT-H-14-378-quickgelu model from
 Open CLIP. Randomly shuffle the order of the images with a random seed of 1000.
 Put 70% of the (shuffled) data into the training set and the rest into the
-testing set.
+testing set. Write the results of the tests into the file results.csv
+(appending them to the end).
 
-	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ -k 10,20,30,40,50 --clip-model open_clip:ViT-H-14-378-quickgelu --demographics demo.csv --age 30,49
+	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ \
+        -k 10,20,30,40,50 --clip-model open_clip:ViT-H-14-378-quickgelu \
+        --demographics demo.csv --age 30,49
 
 Load image filename and score data from `data.geojson`, load the image files
 themselves from the directory `images/`, run the tests multiple times with
@@ -111,11 +120,12 @@ Open CLIP. Filter the responses according the the demographics information
 found in demo.csv, keeping only those scores that were given by participants
 between the ages of 30 to 49.
 
-	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ -k 40 --clip-model open_clip:ViT-H-14-378-quickgelu --export model.npz
+	python3 clip_retrieval_knn.py -g data.geojson --images-dir images/ \
+        -k 40 --clip-model open_clip:ViT-H-14-378-quickgelu --export model.npz
 
 Load image filename and score data from `data.geojson`, load the image files
 themselves from the directory `images/`, use K = 40 and the
-ViT-H-14-378-quickgelu model from Open CLIP. . Export the resulting model to the file
+ViT-H-14-378-quickgelu model from Open CLIP. Export the resulting model to the file
 model.npz, do not run the tests.
 
 ## Complementary environmental variables
