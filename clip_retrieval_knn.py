@@ -492,7 +492,7 @@ for cat in categories:
     d['trainvecs'] = d['vecs'][traininds]
     d['testvecs'] = d['vecs'][testinds]
 
-    
+
     (num_vec_rows, clipvecsize)       = d['vecs'].shape
     (num_trainvec_rows, clipvecsize1) = d['trainvecs'].shape
     (num_testvec_rows, clipvecsize2)  = d['testvecs'].shape
