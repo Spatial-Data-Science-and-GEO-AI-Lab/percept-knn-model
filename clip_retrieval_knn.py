@@ -56,6 +56,7 @@ parser.add_argument('--random-seed', metavar='INT', help='Seed for random number
 parser.add_argument('--stratified', action='store_true', help='Use stratified sampling (stratified by rating).', default=False)
 parser.add_argument('--environmental', action='store_true', help='Add environmental features into the model', default=False)
 parser.add_argument('--environmental-method', metavar='METHOD', type=str, help='One of: append, average, slerp', default='append')
+parser.add_argument('--environmental-text-dir', metavar='DIR', type=str, help='Path to dir containing prompt files for environmental vars', default=None)
 parser.add_argument('--prompt-style', metavar='NUM', type=int, help='One of: 0, 1', default=0)
 parser.add_argument('--results-log', '-L', metavar='FILENAME', type=str, help='Append the results to this file (CSV format)', default=None)
 parser.add_argument('--normalization-method', metavar='METHOD', type=str, help='softmax10** (default), softmax or divbysum', default='softmax10**')
@@ -95,7 +96,10 @@ if args.environmental:
     # directory to store text prompts and their associated embeddings.
     assert(args.prompt_style in [0, 1])
     textembdir = 'text-' + f'prompt{args.prompt_style}-' + embdir
-    textdir = Path(textembdir) / 'text/'
+    if args.environmental_text_dir is not None:
+        textdir = Path(args.environmental_text_dir)
+    else:
+        textdir = Path(textembdir) / 'text/'
     textdir.mkdir(parents=True, exist_ok=True)
     textnpyfile = Path(textembdir) / 'text_emb/text_emb_0.npy'
     textmetadatafile = Path(textembdir) / 'metadata/metadata_0.parquet'
@@ -289,25 +293,26 @@ if args.environmental:
 
     # Check if the text CLIP vectors already exist
     if not textnpyfile.exists():
-        # Generate prompts that correspond to each of the locations in the data.
-        for fn, props in db.items():
-            textfn = textdir / Path(fn).with_suffix('.txt')
-            # Do not regenerate the prompt if it was already written to file.
-            if textfn.exists(): continue
-            def to_quintile(k):
-                # Look up the quintile ranking in qgdf and convert it to a text description.
-                q = qgdf.loc[qgdf['image_id'] == props['image_id']][f'{k}_quintile'].item()
-                return ['very low', 'low', 'medium', 'high', 'very high'][q-1]
+        if args.environmental_text_dir is None:
+            # Generate prompts that correspond to each of the locations in the data.
+            for fn, props in db.items():
+                textfn = textdir / Path(fn).with_suffix('.txt')
+                # Do not regenerate the prompt if it was already written to file.
+                if textfn.exists(): continue
+                def to_quintile(k):
+                    # Look up the quintile ranking in qgdf and convert it to a text description.
+                    q = qgdf.loc[qgdf['image_id'] == props['image_id']][f'{k}_quintile'].item()
+                    return ['very low', 'low', 'medium', 'high', 'very high'][q-1]
 
-            if args.prompt_style == 0:
-                # Prompt-style 0: just output the raw quantity
-                text = '; '.join([f'{reformat(k)} is {v}' for k, v in props.items() if k in env_keys])
-            elif args.prompt_style == 1:
-                # Prompt-style 1: output the quintile for the quantity, pretty-printed as 'very low', 'low', etc.
-                text = '; '.join([f'{reformat(k)} is {to_quintile(k)}' for k, v in props.items() if k in env_keys])
-            #log(f"{textfn}: {text}")
-            with open(textfn, 'w') as fp:
-                fp.write(text + '\n')
+                if args.prompt_style == 0:
+                    # Prompt-style 0: just output the raw quantity
+                    text = '; '.join([f'{reformat(k)} is {v}' for k, v in props.items() if k in env_keys])
+                elif args.prompt_style == 1:
+                    # Prompt-style 1: output the quintile for the quantity, pretty-printed as 'very low', 'low', etc.
+                    text = '; '.join([f'{reformat(k)} is {to_quintile(k)}' for k, v in props.items() if k in env_keys])
+                #log(f"{textfn}: {text}")
+                with open(textfn, 'w') as fp:
+                    fp.write(text + '\n')
 
         # Invoke the clip-retrieval tool to generate text embeddings
         cmd=["clip-retrieval", 'inference', '--input_dataset', str(textdir), '--output_folder', str(textembdir), '--clip_model', args.clip_model] # + args.other_clip_retrieval_args.split(' ')
